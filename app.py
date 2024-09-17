@@ -18,16 +18,7 @@ genai.configure(api_key=gemini_api_key)
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
 
-# Configure Google Generative AI with the Gemini API
-api_key = os.getenv("GEMINI_API_KEY") # Load API key from .env file
-usda_api_key = os.getenv("USDA_API_KEY") # Load USDA API key from .env file
-if not api_key:
-    st.error("Gemini API key not found. Please set it in the .env file.")
-    st.stop()
 
-if not usda_api_key:
-    st.error("USDA API key not found. Please set it in the .env file.")
-    st.stop()
 
 genai.configure(api_key=api_key)
 
