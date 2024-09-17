@@ -1,3 +1,4 @@
+pydantic<2.0.0
 setuptools
 altair==4.2.2
 attrs==24.2.0
