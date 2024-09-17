@@ -18,3 +18,5 @@ langchain==0.0.270
 sentence-transformers
 chromadb
 langchain-community
+PyMuPDF
+pdfplumber
