@@ -3,7 +3,7 @@ setuptools
 altair==4.2.2
 attrs==24.2.0
 jsonschema==4.23.0
-numpy==2.1.1
+numpy==1.26.0  # Downgraded to satisfy langchain requirements
 pandas==2.2.2
 python-dateutil==2.9.0.post0
 pytz==2024.2
