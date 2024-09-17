@@ -18,10 +18,6 @@ genai.configure(api_key=gemini_api_key)
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
 
-
-
-genai.configure(api_key=api_key)
-
 # Function to query USDA API for nutritional data
 def get_nutritional_data(food_name):
     search_url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={food_name}&api_key={usda_api_key}"
