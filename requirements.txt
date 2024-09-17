@@ -16,4 +16,3 @@ streamlit
 langchain
 sentence-transformers
 chromadb
-
