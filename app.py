@@ -6,7 +6,7 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
-from dotenv import load_dotenv
+
 
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
