@@ -57,6 +57,7 @@ sentence-transformers==3.1.0
 six==1.16.0
 streamlit==1.38.0
 toolz==0.12.1
+protobuf==3.20.3  # Downgrade protobuf
 tzdata==2024.1
 uvicorn==0.23.2
 watchdog==3.0.0
