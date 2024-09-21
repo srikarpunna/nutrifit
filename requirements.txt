@@ -1,2 +1,4 @@
 google-generativeai==0.8.1
 langchain_community
+pypdf2
+pdfplumber
