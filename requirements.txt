@@ -1,4 +1,4 @@
 google-generativeai==0.8.1
-langchain_community
-pypdf2
-pdfplumber
+langchain_community==0.3.0  # Replace with the exact version you have installed
+pypdf2==3.0.0  # Replace with the actual version you have
+pdfplumber==0.9.0  # Replace with the actual version you have
