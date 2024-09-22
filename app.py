@@ -18,7 +18,7 @@ st.write("Pinecone API Key (first 5 chars):", st.secrets["PINECONE"]["PINECONE_A
 st.write("Pinecone Environment:", st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"])
 st.write("Pinecone Index Host:", st.secrets["PINECONE"]["PINECONE_INDEX_HOST"])
 # Initialize Pinecone index
-index_name = "nutrifit-index"
+index_name = "quickstart"
 pc = Pinecone(api_key=pinecone_api_key,)
 index = pc.Index("quickstart")
 
