@@ -6,4 +6,4 @@ sentence-transformers==3.1.0
 chromadb==0.3.23
 protobuf==3.20.*
 pinecone-client==5.0.1
-
+langchain_huggingface==0.1.0
