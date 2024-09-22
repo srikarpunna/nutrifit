@@ -82,7 +82,7 @@ def init_model():
     # Prepare data for upserting
     vectors = []
     for i, text in enumerate(texts):
-        vector = embeddings.embed_documents([text.page_content])  # Assuming 'page_content' has the text
+        vector = embeddings.embed_documents([text.page_content])[0]  # Assuming 'page_content' has the text
         vectors.append((f"vec-{i}", vector, {"page_content": text.page_content}))
 
     # Upsert vectors into Pinecone
