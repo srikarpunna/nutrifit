@@ -4,7 +4,8 @@ import requests
 import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+
 from pinecone import Pinecone
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
