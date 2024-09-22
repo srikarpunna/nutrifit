@@ -5,7 +5,7 @@ import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import pinecone  # Import Pinecone client
+from pinecone import Pinecone
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
@@ -19,11 +19,8 @@ st.write("Pinecone Environment:", st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"]
 st.write("Pinecone Index Host:", st.secrets["PINECONE"]["PINECONE_INDEX_HOST"])
 # Initialize Pinecone index
 index_name = "nutrifit-index"
-try:    
-    index = pinecone.Index(index_name, host=pinecone_index_host)
-except pinecone.exceptions.NotFoundException:    
-    st.error(f"Index '{index_name}' not found. Please check your Pinecone setup.")
- 
+pc = Pinecone(api_key=pinecone_api_key,)
+index = pc.Index("quickstart")
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
