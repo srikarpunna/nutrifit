@@ -6,34 +6,22 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import pinecone  # Import Pinecone client
-from pinecone import Pinecone, ServerlessSpec
 
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
-pinecone_environment = st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"] 
+pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
 
-# Create an instance of Pinecone
-pc = Pinecone(api_key=pinecone_api_key)
-
-# Check if the index exists, if not, create it
+# Initialize Pinecone index
 index_name = "nutrifit-index"
-if index_name not in pc.list_indexes().names():
-    pc.create_index(
-        name=index_name,
-        dimension=384,  # Adjust based on your model's dimension
-        metric='cosine',
-        spec=ServerlessSpec(
-            cloud='aws',  # Replace with the correct cloud provider, e.g., 'aws' or 'gcp'
-            region=pinecone_environment  # Use the environment stored in your TOML file
-        )
-    )
 
-# Connect to the index
-index = pinecone.Index(index_name)  # Change this line to use pinecone.Index()
+# Connect to the index using the host and API key
+index = pinecone.Index(index_name, host=pinecone_index_host)
+
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
+
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
@@ -77,29 +65,6 @@ def format_nutritional_data(nutritional_data):
             formatted_data.append(f"**{data['food_name']}**: Nutritional information not found.")
     return "\n\n".join(formatted_data)
 
-# Function to get and format nutritional data
-def get_and_format_nutritional_data(user_food_list):
-    nutritional_data = []
-    for food in user_food_list.split(","):
-        food = food.strip().lower()
-        data = get_nutritional_data(food)
-        if data:
-            nutritional_data.append({
-                "food_name": data['food_name'],
-                "serving_size": data['serving_size'],
-                "serving_size_unit": data['serving_size_unit'],
-                "nutrients": data['nutrients']
-            })
-        else:
-            nutritional_data.append({
-                "food_name": food.capitalize(),
-                "serving_size": "N/A",
-                "serving_size_unit": "N/A",
-                "nutrients": {}
-            })
-    
-    return format_nutritional_data(nutritional_data)
-
 # Function to initialize the model with Pinecone
 def init_model():
     # Load the PDF document
@@ -112,13 +77,6 @@ def init_model():
 
     # Generate embeddings
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-    # Create or connect to a Pinecone index
-    index_name = "nutrifit-index"
-    if index_name not in pinecone.list_indexes():
-        pinecone.create_index(index_name, dimension=embeddings.dimension, metric="cosine")
-    
-    index = pinecone.Index(index_name)
 
     # Prepare data for upserting
     vectors = []
@@ -289,4 +247,3 @@ if st.button("Generate Meal Plan"):
 
     # Optionally, display related documents from the retriever
     st.write("Related Documents:", results)
-
