@@ -7,23 +7,22 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 
 from pinecone import Pinecone
+
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
+
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
 pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
 
-
-pc = Pinecone(api_key=pinecone_api_key,)
+pc = Pinecone(api_key=pinecone_api_key)
 index = pc.Index("nitrifit-index", host=pinecone_index_host)
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
-
-
 
 # Function to query USDA API for nutritional data
 def get_nutritional_data(food_name):
@@ -148,72 +147,32 @@ else:
 # User inputs their regular food preferences
 user_food_list = st.text_area("Enter the list of foods you eat regularly (separated by commas)", "chicken, rice, eggs, fish")
 
-if st.button("Generate Meal Plan"):
-    # Get nutritional data for each food
-    nutritional_data = []
-    for food in user_food_list.split(","):
-        food = food.strip().lower()
-        data = get_nutritional_data(food)
-        if data:
-            nutritional_data.append({
-                "food_name": data['food_name'],
-                "serving_size": data['serving_size'],
-                "serving_size_unit": data['serving_size_unit'],
-                "nutrients": data['nutrients']
-            })
-        else:
-            nutritional_data.append({
-                "food_name": food.capitalize(),
-                "serving_size": "N/A",
-                "serving_size_unit": "N/A",
-                "nutrients": {}
-            })
+def format_retrieved_content(results):
+    formatted_content = "Relevant information from Dietary Guidelines:\n\n"
+    for match in results['matches']:
+        formatted_content += match['metadata']['page_content'] + "\n\n"
+    return formatted_content
 
-    # Format the nutritional data
-    formatted_nutritional_data = format_nutritional_data(nutritional_data)
-    
+def generate_meal_plan(user_info, formatted_nutritional_data, retriever, query_gemini):
+    # Perform similarity search with the retriever
+    results = retriever(user_info, top_k=2)  # Adjust top_k as needed
 
-    # Combine inputs into a prompt
-    user_info = f"""
-    Age: {age}
-    Gender: {gender}
-    Height: {height} cm
-    Weight: {weight} kg
-    Activity Level: {activity_level}
-    Weekly Average Calories Burned: {calories_burned} kcal
-    Weekly Average Steps Walked: {steps_walked}
-    Average Daily Sleep Hours: {sleep_hours}
-    Health Goals: {health_goals}
-    Dietary Preferences: {dietary_preferences}
-    Health Conditions: {health_conditions}
-    Alcoholic: {"Yes" if is_alcoholic else "No"}
-    Include Alcohol: {include_alcohol}
-    Regular Foods: {user_food_list}
-    Nutritional Data for Foods Consumed Regularly:
-    {nutritional_data}
-    """
+    # Format the retrieved content
+    retrieved_content = format_retrieved_content(results)
 
-    # Display user information and nutritional data
-    st.subheader("Your Information:")
-    st.text(user_info)
-
-    st.subheader("Nutritional Data for Foods:")
-    st.write(formatted_nutritional_data)
-
-    # Combine user information and additional instructions into the query
+    # Combine user information, nutritional data, and retrieved content into the prompt
     detailed_prompt = f"""
-    Based on the following user information and USDA nutritional data, create a personalized meal plan that aligns with the Dietary Guidelines for Americans:
+    Based on the following user information, USDA nutritional data, and relevant information from the Dietary Guidelines for Americans, create a personalized meal plan:
 
     User Information:
     {user_info}
 
     Nutritional Data for Foods Consumed Regularly:
     {formatted_nutritional_data}
-    
-    
 
+    {retrieved_content}
 
-Please consider the user’s data and guidelines only. Do not hallucinate any information while preparing the meal plan.
+    Please consider the user's data and guidelines only. Do not hallucinate any information while preparing the meal plan.
 
     Please consider the user's age, gender, height, weight, activity level, weekly average calories burned, weekly average steps walked, sleep hours, health goals, dietary preferences, health conditions, and the list of foods they regularly consume.
 
@@ -240,11 +199,61 @@ Please consider the user’s data and guidelines only. Do not hallucinate any in
     Include a table of food items used in the plan, showing their portion size and corresponding nutritional information.
     """
 
-    # Perform similarity search with the retriever
-    results = st.session_state['retriever'](detailed_prompt, top_k=2)  # Adjust top_k as needed
-
     # Use the Gemini API to generate a response based on the detailed prompt
-    gemini_response = st.session_state['query_gemini'](detailed_prompt)
+    gemini_response = query_gemini(detailed_prompt)
+
+    return gemini_response, results
+
+if st.button("Generate Meal Plan"):
+    # Get nutritional data for each food
+    nutritional_data = []
+    for food in user_food_list.split(","):
+        food = food.strip().lower()
+        data = get_nutritional_data(food)
+        if data:
+            nutritional_data.append({
+                "food_name": data['food_name'],
+                "serving_size": data['serving_size'],
+                "serving_size_unit": data['serving_size_unit'],
+                "nutrients": data['nutrients']
+            })
+        else:
+            nutritional_data.append({
+                "food_name": food.capitalize(),
+                "serving_size": "N/A",
+                "serving_size_unit": "N/A",
+                "nutrients": {}
+            })
+
+    # Format the nutritional data
+    formatted_nutritional_data = format_nutritional_data(nutritional_data)
+    
+    # Combine inputs into a prompt
+    user_info = f"""
+    Age: {age}
+    Gender: {gender}
+    Height: {height} cm
+    Weight: {weight} kg
+    Activity Level: {activity_level}
+    Weekly Average Calories Burned: {calories_burned} kcal
+    Weekly Average Steps Walked: {steps_walked}
+    Average Daily Sleep Hours: {sleep_hours}
+    Health Goals: {health_goals}
+    Dietary Preferences: {dietary_preferences}
+    Health Conditions: {health_conditions}
+    Alcoholic: {"Yes" if is_alcoholic else "No"}
+    Include Alcohol: {include_alcohol}
+    Regular Foods: {user_food_list}
+    """
+
+    # Display user information and nutritional data
+    st.subheader("Your Information:")
+    st.text(user_info)
+
+    st.subheader("Nutritional Data for Foods:")
+    st.write(formatted_nutritional_data)
+
+    gemini_response, results = generate_meal_plan(user_info, formatted_nutritional_data, st.session_state['retriever'], st.session_state['query_gemini'])
 
     # Display the assistant's response
     st.subheader("Personalized Meal Plan with Nutritional Information:")
