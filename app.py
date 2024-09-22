@@ -211,8 +211,7 @@ if st.button("Generate Meal Plan"):
     {formatted_nutritional_data}
     
     
-Dietary Guidelines (pulled from trusted sources):
-{relevant_guidelines_content}
+
 
 Please consider the user’s data and guidelines only. Do not hallucinate any information while preparing the meal plan.
 
