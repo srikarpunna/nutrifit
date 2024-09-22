@@ -7,13 +7,16 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import pinecone  # Import Pinecone client
 from pinecone import Pinecone, ServerlessSpec
+
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
 pinecone_environment = st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"] 
+
 # Create an instance of Pinecone
 pc = Pinecone(api_key=pinecone_api_key)
+
 # Check if the index exists, if not, create it
 index_name = "nutrifit-index"
 if index_name not in pc.list_indexes().names():
@@ -28,14 +31,9 @@ if index_name not in pc.list_indexes().names():
     )
 
 # Connect to the index
-index = pc.index(index_name)
-
+index = pinecone.Index(index_name)  # Change this line to use pinecone.Index()
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
-
-# Initialize Pinecone
-pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
-
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
