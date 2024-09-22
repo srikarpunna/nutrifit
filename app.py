@@ -82,7 +82,7 @@ def init_model():
     # Prepare data for upserting
     vectors = []
     for i, text in enumerate(texts):
-        vector = embeddings.embed_documents([text.page_content])[0]  # Assuming 'page_content' has the text
+        vector = embeddings.embed_documents([text.page_content])  # Assuming 'page_content' has the text
         vectors.append((f"vec-{i}", vector, {"page_content": text.page_content}))
 
     # Upsert vectors into Pinecone
@@ -90,7 +90,7 @@ def init_model():
 
     # Create a retriever interface using Pinecone
     retriever = lambda query, top_k: index.query(
-        vector=embeddings.embed(query),
+        vector=embeddings.embed_query(query),
         top_k=top_k,
         include_metadata=True
     )
