@@ -171,12 +171,7 @@ if st.button("Generate Meal Plan"):
 
     # Format the nutritional data
     formatted_nutritional_data = format_nutritional_data(nutritional_data)
-    # Use the retriever to get relevant guidelines
-    user_profile = f"age: {age}, gender: {gender}, activity_level: {activity_level}, health_goals: {health_goals}, dietary_preferences: {dietary_preferences}, health_conditions: {health_conditions}"
-    relevant_guidelines = st.session_state['retriever'](user_profile, top_k=2)
     
-    # Format the retrieved guidelines into readable content
-    relevant_guidelines_content = "\n".join([item['metadata']['page_content'] for item in relevant_guidelines['matches']])
 
     # Combine inputs into a prompt
     user_info = f"""
