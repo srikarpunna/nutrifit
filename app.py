@@ -15,9 +15,7 @@ gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
 pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
-st.write("Pinecone API Key (first 5 chars):", st.secrets["PINECONE"]["PINECONE_API_KEY"])
-st.write("Pinecone Environment:", st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"])
-st.write("Pinecone Index Host:", st.secrets["PINECONE"]["PINECONE_INDEX_HOST"])
+
 
 pc = Pinecone(api_key=pinecone_api_key,)
 index = pc.Index("nitrifit-index", host=pinecone_index_host)
@@ -173,6 +171,12 @@ if st.button("Generate Meal Plan"):
 
     # Format the nutritional data
     formatted_nutritional_data = format_nutritional_data(nutritional_data)
+    # Use the retriever to get relevant guidelines
+    user_profile = f"age: {age}, gender: {gender}, activity_level: {activity_level}, health_goals: {health_goals}, dietary_preferences: {dietary_preferences}, health_conditions: {health_conditions}"
+    relevant_guidelines = st.session_state['retriever'](user_profile, top_k=2)
+    
+    # Format the retrieved guidelines into readable content
+    relevant_guidelines_content = "\n".join([item['metadata']['page_content'] for item in relevant_guidelines['matches']])
 
     # Combine inputs into a prompt
     user_info = f"""
@@ -210,6 +214,12 @@ if st.button("Generate Meal Plan"):
 
     Nutritional Data for Foods Consumed Regularly:
     {formatted_nutritional_data}
+    
+    
+Dietary Guidelines (pulled from trusted sources):
+{relevant_guidelines_content}
+
+Please consider the user’s data and guidelines only. Do not hallucinate any information while preparing the meal plan.
 
     Please consider the user's age, gender, height, weight, activity level, weekly average calories burned, weekly average steps walked, sleep hours, health goals, dietary preferences, health conditions, and the list of foods they regularly consume.
 
