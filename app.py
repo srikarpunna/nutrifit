@@ -5,15 +5,20 @@ import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
-
+import pinecone  # Import Pinecone client
 
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
+pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
+pinecone_environment = st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"] 
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
+
+# Initialize Pinecone
+pinecone.init(api_key=pinecone_api_key, environment=pinecone_environment)
+
 # Set Streamlit page configuration
 st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
 st.header("NutriMentor")
@@ -25,7 +30,7 @@ def get_nutritional_data(food_name):
     data = response.json()
 
     if 'foods' in data and len(data['foods']) > 0:
-        food_data = data['foods'][0] # Take the first result from the search
+        food_data = data['foods'][0]  # Take the first result from the search
         food_name = food_data.get("description", food_name)
         serving_size = food_data.get("servingSize", 100)
         serving_size_unit = food_data.get("servingSizeUnit", "g")
@@ -64,7 +69,6 @@ def get_and_format_nutritional_data(user_food_list):
         food = food.strip().lower()
         data = get_nutritional_data(food)
         if data:
-            nutrients = "\n".join([f"{nutrient}: {value}" for nutrient, value in data["nutrients"].items()])
             nutritional_data.append({
                 "food_name": data['food_name'],
                 "serving_size": data['serving_size'],
@@ -81,7 +85,7 @@ def get_and_format_nutritional_data(user_food_list):
     
     return format_nutritional_data(nutritional_data)
 
-# Function to initialize the model
+# Function to initialize the model with Pinecone
 def init_model():
     # Load the PDF document
     loader = PyPDFLoader("Dietary_Guidelines_for_Americans_2020-2025.pdf")
@@ -94,18 +98,28 @@ def init_model():
     # Generate embeddings
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-    # Specify a directory for ChromaDB to store data
-    persist_directory = './chroma_db'
+    # Create or connect to a Pinecone index
+    index_name = "nutrifit-index"
+    if index_name not in pinecone.list_indexes():
+        pinecone.create_index(index_name, dimension=embeddings.dimension, metric="cosine")
+    
+    index = pinecone.Index(index_name)
 
-    # Create the vectorstore using Chroma
-    db = Chroma.from_documents(
-        documents=texts,
-        embedding=embeddings,
-        persist_directory=persist_directory
+    # Prepare data for upserting
+    vectors = []
+    for i, text in enumerate(texts):
+        vector = embeddings.embed(text.page_content)  # Assuming 'page_content' has the text
+        vectors.append((f"vec-{i}", vector, {"page_content": text.page_content}))
+
+    # Upsert vectors into Pinecone
+    index.upsert(vectors)
+
+    # Create a retriever interface using Pinecone
+    retriever = lambda query, top_k: index.query(
+        vector=embeddings.embed(query),
+        top_k=top_k,
+        include_metadata=True
     )
-
-    # Create a retriever interface
-    retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 2})
 
     # Create a function to query the Gemini LLM
     def query_gemini(prompt):
@@ -129,8 +143,8 @@ default_gender = "Male"
 default_height = 175.0
 default_weight = 75.0
 default_activity_level = "Moderately active"
-default_calories_burned = 3500 # Weekly average calories burned
-default_steps_walked = 70000 # Weekly average steps
+default_calories_burned = 3500  # Weekly average calories burned
+default_steps_walked = 70000  # Weekly average steps
 default_sleep_hours = 7.0
 default_health_goals = "Lose 5 kg in 3 months"
 default_dietary_preferences = "Non-vegetarian"
@@ -169,7 +183,6 @@ if st.button("Generate Meal Plan"):
         food = food.strip().lower()
         data = get_nutritional_data(food)
         if data:
-            nutrients = "\n".join([f"{nutrient}: {value}" for nutrient, value in data["nutrients"].items()])
             nutritional_data.append({
                 "food_name": data['food_name'],
                 "serving_size": data['serving_size'],
@@ -249,8 +262,8 @@ if st.button("Generate Meal Plan"):
     Include a table of food items used in the plan, showing their portion size and corresponding nutritional information.
     """
 
-    # Perform similarity search with the retriever (optional)
-    results = st.session_state['retriever'].get_relevant_documents(detailed_prompt)
+    # Perform similarity search with the retriever
+    results = st.session_state['retriever'](detailed_prompt, top_k=2)  # Adjust top_k as needed
 
     # Use the Gemini API to generate a response based on the detailed prompt
     gemini_response = st.session_state['query_gemini'](detailed_prompt)
@@ -261,3 +274,4 @@ if st.button("Generate Meal Plan"):
 
     # Optionally, display related documents from the retriever
     st.write("Related Documents:", results)
+

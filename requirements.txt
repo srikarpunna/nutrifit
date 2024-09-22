@@ -5,4 +5,5 @@ pdfplumber==0.9.0
 sentence-transformers==3.1.0
 chromadb==0.3.23
 protobuf==3.20.*
-pysqlite3-binary
+pinecone-client==5.0.1
+
