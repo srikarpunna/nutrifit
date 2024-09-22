@@ -5,8 +5,7 @@ import google.generativeai as genai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import pinecone
-from pinecone import Pinecone
+import pinecone  # Import Pinecone client
 
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
@@ -14,23 +13,11 @@ usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
 pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
 
-# Initialize Pinecone client
-pc = Pinecone(api_key=pinecone_api_key)
-
 # Initialize Pinecone index
 index_name = "nutrifit-index"
-index_list = pc.list_indexes()
 
-# Create index if it does not exist
-if index_name not in index_list:
-    pc.create_index(name=index_name, dimension=384, metric='cosine')
-    
 # Connect to the index using the host and API key
-try:
-    index = pinecone.Index(index_name, host=pinecone_index_host)
-except pinecone.exceptions.NotFoundException as e:
-    st.error(f"Index '{index_name}' not found. Please check your Pinecone setup.")
-    st.write(e)
+index = pinecone.Index(index_name, host=pinecone_index_host)
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
@@ -94,52 +81,31 @@ def init_model():
     # Prepare data for upserting
     vectors = []
     for i, text in enumerate(texts):
-        # Ensure the embed_documents method exists in HuggingFaceEmbeddings
-        try:
-            vector = embeddings.embed_documents([text.page_content])  # Use embed_documents method
-            vectors.append((f"vec-{i}", vector[0], {"page_content": text.page_content}))
-        except AttributeError as e:
-            st.error(f"Embedding error: {e}")
-            return None, None
+        vector = embeddings.embed(text.page_content)  # Assuming 'page_content' has the text
+        vectors.append((f"vec-{i}", vector, {"page_content": text.page_content}))
 
     # Upsert vectors into Pinecone
-    try:
-        index.upsert(vectors)
-    except Exception as e:
-        st.error(f"Failed to upsert vectors into Pinecone: {e}")
-        return None, None
+    index.upsert(vectors)
 
     # Create a retriever interface using Pinecone
     retriever = lambda query, top_k: index.query(
-        vector=embeddings.embed_query(query),  # Use embed_query method for the query
+        vector=embeddings.embed(query),
         top_k=top_k,
         include_metadata=True
     )
 
     # Create a function to query the Gemini LLM
     def query_gemini(prompt):
-        try:
-            model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
-            response = model.generate_content(prompt)
-            return response.candidates[0].content.parts[0].text if response.candidates else "No response"
-        except Exception as e:
-            st.error(f"Gemini API error: {e}")
-            return "No response due to error."
+        model = genai.GenerativeModel("models/gemini-1.5-flash-latest")
+        response = model.generate_content(prompt)
+        return response.candidates[0].content.parts[0].text if response.candidates else "No response"
 
     # Return both retriever and the query function for LLM
     return retriever, query_gemini
 
 # Initialize the QA model and store it in session state
 if 'qa_model' not in st.session_state:
-    retriever, query_gemini = init_model()
-    if retriever and query_gemini:
-        st.session_state['retriever'], st.session_state['query_gemini'] = retriever, query_gemini
-    else:
-        st.error("Failed to initialize model.")
-
-# User interaction code...
-# [Same user interaction code as you have]
-
+    st.session_state['retriever'], st.session_state['query_gemini'] = init_model()
 
 # Collect user information
 st.subheader("Please enter your personal information or use default values for testing:")
