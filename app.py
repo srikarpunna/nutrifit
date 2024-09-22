@@ -65,7 +65,7 @@ def format_nutritional_data(nutritional_data):
             formatted_data.append(f"**{data['food_name']}**: Nutritional information not found.")
     return "\n\n".join(formatted_data)
 
-# Function to initialize the model with Pinecone
+# Function to initialize the model with Pinecone# Function to initialize the model with Pinecone
 def init_model():
     # Load the PDF document
     loader = PyPDFLoader("Dietary_Guidelines_for_Americans_2020-2025.pdf")
@@ -81,15 +81,15 @@ def init_model():
     # Prepare data for upserting
     vectors = []
     for i, text in enumerate(texts):
-        vector = embeddings.embed(text.page_content)  # Assuming 'page_content' has the text
-        vectors.append((f"vec-{i}", vector, {"page_content": text.page_content}))
+        vector = embeddings.embed_documents([text.page_content])  # Use embed_documents method
+        vectors.append((f"vec-{i}", vector[0], {"page_content": text.page_content}))
 
     # Upsert vectors into Pinecone
     index.upsert(vectors)
 
     # Create a retriever interface using Pinecone
     retriever = lambda query, top_k: index.query(
-        vector=embeddings.embed(query),
+        vector=embeddings.embed_query(query),  # Use embed_query method for the query
         top_k=top_k,
         include_metadata=True
     )
