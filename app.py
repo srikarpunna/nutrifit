@@ -19,9 +19,11 @@ st.write("Pinecone Environment:", st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"]
 st.write("Pinecone Index Host:", st.secrets["PINECONE"]["PINECONE_INDEX_HOST"])
 # Initialize Pinecone index
 index_name = "nutrifit-index"
-
-# Connect to the index using the host and API key
-index = pinecone.Index(index_name, host=pinecone_index_host)
+try:    
+    index = pinecone.Index(index_name, host=pinecone_index_host)
+except pinecone.exceptions.NotFoundException:    
+    st.error(f"Index '{index_name}' not found. Please check your Pinecone setup.")
+ 
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
