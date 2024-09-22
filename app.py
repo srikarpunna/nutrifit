@@ -22,7 +22,7 @@ if index_name not in pc.list_indexes().names():
         dimension=384,  # Adjust based on your model's dimension
         metric='cosine',
         spec=ServerlessSpec(
-            cloud='gcp',  # Replace with the correct cloud provider, e.g., 'aws' or 'gcp'
+            cloud='aws',  # Replace with the correct cloud provider, e.g., 'aws' or 'gcp'
             region=pinecone_environment  # Use the environment stored in your TOML file
         )
     )
