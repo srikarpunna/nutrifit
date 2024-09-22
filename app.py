@@ -169,7 +169,8 @@ def generate_meal_plan(user_info, formatted_nutritional_data, retriever, query_g
 
     Nutritional Data for Foods Consumed Regularly:
     {formatted_nutritional_data}
-
+    
+    Relevant Information from Dietary Guidelines:
     {retrieved_content}
 
     Please consider the user's data and guidelines only. Do not hallucinate any information while preparing the meal plan.
