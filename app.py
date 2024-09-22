@@ -19,7 +19,7 @@ st.write("Pinecone Environment:", st.secrets["PINECONE"]["PINECONE_ENVIRONMENT"]
 st.write("Pinecone Index Host:", st.secrets["PINECONE"]["PINECONE_INDEX_HOST"])
 
 pc = Pinecone(api_key=pinecone_api_key,)
-index = pc.Index("quickstart")
+index = pc.Index("nitrifit-index", host=pinecone_index_host)
 
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
