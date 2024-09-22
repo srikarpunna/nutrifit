@@ -6,7 +6,9 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import pinecone  # Import Pinecone client
-
+# Set Streamlit page configuration
+st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
+st.header("NutriMentor")
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
@@ -24,9 +26,7 @@ index = pinecone.Index(index_name, host=pinecone_index_host)
 # Configure Google Generative AI with the Gemini API
 genai.configure(api_key=gemini_api_key)
 
-# Set Streamlit page configuration
-st.set_page_config(page_title="NutriMentor", page_icon=":robot:")
-st.header("NutriMentor")
+
 
 # Function to query USDA API for nutritional data
 def get_nutritional_data(food_name):
