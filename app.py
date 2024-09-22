@@ -6,16 +6,19 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 import pinecone  # Import Pinecone client
-
+from pinecone import Pinecone
 # Accessing the secrets stored in TOML format
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
 pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
 
+
+# Initialize Pinecone client
+pc = Pinecone(api_key=pinecone_api_key)
 # Initialize Pinecone index
 index_name = "nutrifit-index"
-
+index_list = pc.list_indexes()
 # Connect to the index using the host and API key
 try:    
     index = pinecone.Index(index_name, host=pinecone_index_host)
