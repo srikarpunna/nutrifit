@@ -16,7 +16,7 @@ st.header("NutriMentor")
 gemini_api_key = st.secrets["GEMINI"]["GEMINI_API_KEY"]
 usda_api_key = st.secrets["USDA"]["USDA_API_KEY"]
 pinecone_api_key = st.secrets["PINECONE"]["PINECONE_API_KEY"]
-pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"]  # Get host from secrets
+pinecone_index_host = st.secrets["PINECONE"]["PINECONE_INDEX_HOST"] 
 
 pc = Pinecone(api_key=pinecone_api_key)
 index = pc.Index("nitrifit-index", host=pinecone_index_host)
